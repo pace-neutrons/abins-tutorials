@@ -1,0 +1,7 @@
+name: abins-tutorials
+channels:
+  - conda-forge
+dependencies:
+  - black
+  - isort
+  - flake8
