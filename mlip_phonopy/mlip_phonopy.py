@@ -1,4 +1,9 @@
+#! /usr/bin/env python3
+
+from enum import Enum
 from pathlib import Path
+from typing import Literal, Tuple
+from typing_extensions import Annotated
 
 import ase.io
 from ase import Atoms
@@ -6,19 +11,22 @@ from ase.calculators.calculator import Calculator
 from ase.constraints import ExpCellFilter, StrainFilter
 from ase.io.trajectory import Trajectory
 from ase.optimize import FIRE, LBFGS, QuasiNewton
-# from mace.calculators import mace_off
-from mace.calculators import mace_mp
 import numpy as np
 from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
 from rich import print as rprint
 from tqdm import tqdm
+import typer
 
 
 DISP_SIZE = 1e-3  # Finite displacement  for phonon calculation
 PHONOPY_FILE = "phonopy_params.yaml"  # Save file for force constants
-SUPERCELL = [4, 4, 2]  # Supercell expansion for phonon calculation
 SYMPREC = 1e-4  # Symmetry-detection distance threshold
+
+
+class MLIP(str, Enum):
+    MACE_MP_0 = "mace-mp-0"
+    MACE_OFF_23 = "mace-off"
 
 
 def get_optimized_geometry(
@@ -73,22 +81,44 @@ def ase_from_phonopy(phonopy_atoms: PhonopyAtoms) -> Atoms:
     )
 
 
-def main():
+def main(
+    filename: Annotated[str, typer.Argument()] = "geometry.in",
+    model: MLIP = MLIP.MACE_OFF_23,
+    gpu: bool = False,
+    supercell: Tuple[int, int, int] = (4, 4, 2),
+):
+    device = "cuda" if gpu else "cpu"
+
     rprint(
         '[bold]Demonstration: MLIP + [italic]"direct method"[/italic] phonons + Incoherent INS[/bold]'
     )
 
-    rprint("Step 0: set up the MLIP (MACE-MP-0)...")
-    calc = mace_mp(model="medium", device="cpu", default_dtype="float64")
+    rprint(f"Step 0: set up the MLIP ({model})...".format)
+
+    if model == MLIP.MACE_OFF_23:
+
+        from mace.calculators import mace_off
+
+        calc = mace_off(model="medium", device=device, default_dtype="float64")
+
+    elif model == MLIP.MACE_MP_0:
+
+        from mace.calculators import mace_mp
+
+        calc = mace_mp(model="medium", device=device, default_dtype="float64")
+
+    else:
+        raise ValueError(f"Model '{model}' is not supported")
 
     rprint("Step 1: structure optimisation...")
-    # atoms = ase.io.read("geometry.in")
-    atoms = ase.io.read("opt.traj")
+    atoms = ase.io.read(filename)
     atoms = get_optimized_geometry(atoms, calc)
 
     rprint("Step 2: set up phonon displacements...")
     # Phonopy uses its own ASE-like structure container
-    phonopy = Phonopy(phonopy_from_ase(atoms), supercell_matrix=SUPERCELL, symprec=SYMPREC)
+    phonopy = Phonopy(
+        phonopy_from_ase(atoms), supercell_matrix=supercell, symprec=SYMPREC
+    )
     phonopy.generate_displacements(distance=DISP_SIZE)
 
     rprint("Step 3: calculate forces on displacements...")
@@ -99,8 +129,8 @@ def main():
         return atoms.get_forces()
 
     all_forces = [
-        _get_forces(ase_from_phonopy(supercell))
-        for supercell in tqdm(phonopy.supercells_with_displacements)
+        _get_forces(ase_from_phonopy(displaced_supercell))
+        for displaced_supercell in tqdm(phonopy.supercells_with_displacements)
     ]
 
     rprint("Step 4: Construct force constants...")
@@ -110,7 +140,9 @@ def main():
     rprint(f"      Saving to files {PHONOPY_FILE} and force_constants.hdf5 ...")
     phonopy.save(filename=PHONOPY_FILE, settings={"force_constants": False})
     from phonopy.file_IO import write_force_constants_to_hdf5
+
     write_force_constants_to_hdf5(phonopy.force_constants)
 
+
 if __name__ == "__main__":
-    main()
+    typer.run(main)
