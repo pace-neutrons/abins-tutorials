@@ -11,11 +11,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        uses: mamba-org/provision-with-micromamba@v16
+        uses: mamba-org/setup-micromamba@v1
         with:
+          micromamba-version: "1.5.7-0"
           environment-file: docs-env.yaml
+          init-shell: bash
       - name: Sphinx build
         run: sphinx-build source build
+        shell: bash -el {0}
       - name: Push site to Github Pages
         uses: Cecilapp/GitHub-Pages-deploy@3.2.2
         with:
