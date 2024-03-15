@@ -16,7 +16,8 @@ from ase.spacegroup.symmetrize import FixSymmetry
 from ase.units import fs
 from hiphive import ClusterSpace, ForceConstantPotential, StructureContainer
 from hiphive.utilities import prepare_structures
-# from phonopy import Phonopy
+from phonopy import Phonopy
+from phonopy.file_IO import write_force_constants_to_hdf5
 from phonopy.structure.atoms import PhonopyAtoms
 from rich import print as rprint
 from tqdm import tqdm
@@ -37,6 +38,17 @@ CLUSTER_CUTOFFS = [3.5, 2.5, 2.]
 class MLIP(str, Enum):
     MACE_MP_0 = "mace-mp-0"
     MACE_OFF_23 = "mace-off"
+    MACE_ANI_CC = "mace-ani-cc"
+
+
+class Size(str, Enum):
+    SMALL = "small"
+    MEDIUM = "medium"
+
+
+class FloatSize(str, Enum):
+    FLOAT32 = "32"
+    FLOAT64 = "64"
 
 
 def get_optimized_geometry(
@@ -101,7 +113,7 @@ def run_md(
     pre_steps: int = 1000,
     run_steps: int = 2000,
     timestep_fs: float = 1.0,
-    temperature_K=300,
+    temperature_K=100,
     friction_fs: float = 0.01,
     traj_file: str | Path = TRAJ_FILE,
     traj_interval=10,
@@ -113,7 +125,7 @@ def run_md(
     traj_writer = ase.io.Trajectory(traj_file, "w", atoms)
 
     for run in range(1, n_independent_runs + 1):
-        rprint("[bold]MD run {run}/{n_independent_runs}[/bold]")
+        rprint(f"[bold]MD run {run}/{n_independent_runs}[/bold]")
 
         atoms.positions = initial_positions
         MaxwellBoltzmannDistribution(atoms, temperature_K=(temperature_K * 2))
@@ -146,13 +158,37 @@ def get_snapshots(traj_file: str | Path, n: int = SAMPLE_SIZE):
     return [traj[i] for i in indices]
 
 
+def save_fcp_to_phonopy(fcp: ForceConstantPotential,
+                        supercell_matrix: np.ndarray,
+                        atoms: Atoms,
+                        fc_dir: Path = "force_constants") -> None:
+    from os import makedirs
+    makedirs(fc_dir, exist_ok=True)
+
+    prim = fcp.primitive_structure
+    phonopy = Phonopy(phonopy_from_ase(prim), supercell_matrix=supercell_matrix)
+    supercell = ase_from_phonopy(phonopy.get_supercell())
+
+    fcs = fcp.get_force_constants(supercell)
+    phonopy.set_force_constants(fcs.get_fc_array(order=2))
+
+    phonopy.save(
+        settings={"force_constants": False}, filename=(fc_dir / "phonopy.yaml")
+    )
+
+    write_force_constants_to_hdf5(phonopy.force_constants, filename=(fc_dir / "force_constants.hdf5"))
+
+
 def main(
     filename: Annotated[str, typer.Argument()] = "geometry.in",
     skip_opt: bool = False,
     md_traj: Optional[Path] = None,
     model: MLIP = MLIP.MACE_OFF_23,
+    size: Size = Size.SMALL,
+    float_size: FloatSize = FloatSize.FLOAT32,
     gpu: bool = False,
     supercell: Tuple[int, int, int] = (2, 2, 1),
+    fc_dir: Path = "force_constants"
 ):
     device = "cuda" if gpu else "cpu"
 
@@ -160,24 +196,28 @@ def main(
 
     rprint(f"Step 0: set up the MLIP ({model})...".format)
 
-    if model == MLIP.MACE_OFF_23:
+    match model:
+        case MLIP.MACE_OFF_23:
+            from mace.calculators import mace_off as mace_pretrained
+            mace_kwargs = {"model": size}
 
-        from mace.calculators import mace_off
+        case MLIP.MACE_MP_0:
+            from mace.calculators import mace_mp as mace_pretrained
+            mace_kwargs = {"model": size}
 
-        calc = mace_off(model="small", device=device, default_dtype="float32")
+        case MLIP.MACE_ANI_CC:
+            from mace.calculators import mace_anicc as mace_pretrained
 
-    elif model == MLIP.MACE_MP_0:
+        case _:
+            raise ValueError(f"Model '{model}' is not supported")
 
-        from mace.calculators import mace_mp
-
-        calc = mace_mp(model="small", device=device, default_dtype="float32")
-
-    else:
-        raise ValueError(f"Model '{model}' is not supported")
+    calc = mace_pretrained(device=device, default_dtype=f"float{float_size}", **mace_kwargs)
 
     rprint("Step 1: structure optimisation with symmetry...")
     atoms = ase.io.read(filename)
-    if not skip_opt:
+    if (skip_opt or md_traj):
+        rprint(":scissors: ---- skipped --- :scissors:")
+    else:
         atoms = get_optimized_geometry(atoms, calc)
 
     rprint("Step 2: molecular dynamics...")
@@ -187,6 +227,7 @@ def main(
     md_atoms.calc = calc
 
     if md_traj:
+        rprint(":scissors: ---- skipped --- :scissors:")
         traj_file = md_traj
     else:
         run_md(md_atoms, traj_file=TRAJ_FILE)
@@ -211,36 +252,9 @@ def main(
 
     print(opt.summary)
     fcp = ForceConstantPotential(cs, opt.parameters)
-    fcp.write("fitted.fcp")
 
-    # rprint("Step 2: set up phonon displacements...")
-    # # Phonopy uses its own ASE-like structure container
-    # phonopy = Phonopy(
-    #     phonopy_from_ase(atoms), supercell_matrix=supercell, symprec=SYMPREC
-    # )
-    # phonopy.generate_displacements(distance=DISP_SIZE)
-
-    # rprint("Step 3: calculate forces on displacements...")
-    # force_container = []
-
-    # def _get_forces(atoms: Atoms) -> np.ndarray:
-    #     atoms.calc = calc
-    #     return atoms.get_forces()
-
-    # all_forces = [
-    #     _get_forces(ase_from_phonopy(displaced_supercell))
-    #     for displaced_supercell in tqdm(phonopy.supercells_with_displacements)
-    # ]
-
-    # rprint("Step 4: Construct force constants...")
-    # phonopy.forces = all_forces
-    # phonopy.produce_force_constants()
-
-    # rprint(f"      Saving to files {PHONOPY_FILE} and force_constants.hdf5 ...")
-    # phonopy.save(filename=PHONOPY_FILE, settings={"force_constants": False})
-    # from phonopy.file_IO import write_force_constants_to_hdf5
-
-    # write_force_constants_to_hdf5(phonopy.force_constants)
+    rprint(f"... writing to {fc_dir}/phonopy.yaml & {fc_dir}/force_constants.hdf5")
+    save_fcp_to_phonopy(fcp, supercell, atoms, fc_dir=fc_dir)    
 
 
 if __name__ == "__main__":
