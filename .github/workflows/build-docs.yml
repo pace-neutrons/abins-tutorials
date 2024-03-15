@@ -1,0 +1,25 @@
+name: build-docs
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: mamba-org/provision-with-micromamba@v16
+        with:
+          environment-file: docs-env.yaml
+      - name: Sphinx build
+        run: sphinx-build source build
+      - name: Push site to Github Pages
+        uses: Cecilapp/GitHub-Pages-deploy@3.2.2
+        with:
+          build_dir: build
+          branch: gh-pages
+          jekyll: no
+          
