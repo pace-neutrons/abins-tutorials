@@ -21,6 +21,7 @@ jobs:
         shell: bash -el {0}
       - name: Push site to Github Pages
         uses: Cecilapp/GitHub-Pages-deploy@3.2.2
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
