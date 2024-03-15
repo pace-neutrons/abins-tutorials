@@ -75,7 +75,17 @@
   <section id="using-a-pre-trained-mlip-with-phonopy">
 <h1>Using a pre-trained MLIP with Phonopy<a class="headerlink" href="#using-a-pre-trained-mlip-with-phonopy" title="Link to this heading"></a></h1>
 <p>For accurate results one would typically compute phonons with density-functional theory or with a system-specific interatomic potential. However, at the early stages of a project it may be useful to run a “general” machine-learned interatomic potential (MLIP) which is been trained on a variety of systems.</p>
-<p>In this tutorial we primarily use the MACE-OFF23 potential which is trained on organic molecules; the more general MACE-MP-0 can be used in the same way for other chemistries. In both cases we are using the ASE Calculator interface; most popular MLIP packages have an ASE interface and so can be used in a similar fashion.</p>
+<p>In this tutorial we primarily use the MACE-OFF23 <a class="footnote-reference brackets" href="#id3" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> potential which is trained on organic molecules; the more general MACE-MP-0 <a class="footnote-reference brackets" href="#id4" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> can be used in the same way for other chemistries. In both cases we are using the ASE Calculator interface; most popular MLIP packages have an ASE interface and so can be used in a similar fashion.</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id3" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>D. P. Kovács et al. “MACE-OFF23: Transferable Machine Learning Force Fields for Organic Molecules” <a class="reference external" href="https://arxiv.org/abs/2312.15211">https://arxiv.org/abs/2312.15211</a></p>
+</aside>
+<aside class="footnote brackets" id="id4" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p>I. Batatia et al. “A foundation model for atomistic materials chemistry” <a class="reference external" href="https://arxiv.org/abs/2401.00096">https://arxiv.org/abs/2401.00096</a></p>
+</aside>
+</aside>
 <p>We will also use ASE for geometry optimisation and Phonopy for setting-up/post-processing the force-constant calculations.</p>
 </section>
 
