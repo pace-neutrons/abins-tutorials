@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to Abins Tutorials! &mdash; abins-tutorials 0.1 documentation</title>
+  <title>Environment setup &mdash; abins-tutorials 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -21,7 +21,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Environment setup" href="environment-setup.html" /> 
+    <link rel="next" title="Using a pre-trained MLIP with Phonopy" href="mlip-phonopy.html" />
+    <link rel="prev" title="Welcome to Abins Tutorials!" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -32,7 +33,7 @@
 
           
           
-          <a href="#" class="icon icon-home">
+          <a href="index.html" class="icon icon-home">
             abins-tutorials
           </a>
 <div role="search">
@@ -44,8 +45,8 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="environment-setup.html">Environment setup</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Environment setup</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mlip-phonopy.html">Using a pre-trained MLIP with Phonopy</a></li>
 </ul>
 
@@ -55,17 +56,17 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">abins-tutorials</a>
+          <a href="index.html">abins-tutorials</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Welcome to Abins Tutorials!</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Environment setup</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/environment-setup.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -73,27 +74,30 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="welcome-to-abins-tutorials">
-<h1>Welcome to Abins Tutorials!<a class="headerlink" href="#welcome-to-abins-tutorials" title="Link to this heading"></a></h1>
-<p>Hopefully some tutorial files will make their way here eventually.</p>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="environment-setup.html">Environment setup</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mlip-phonopy.html">Using a pre-trained MLIP with Phonopy</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="mlip-phonopy.html#step-0-setting-up-the-machine-learned-interatomic-potential-mlip">Step 0: setting up the machine-learned interatomic potential (MLIP)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mlip-phonopy.html#step-1-geometry-optimisation">Step 1: geometry optimisation</a></li>
-</ul>
-</li>
-</ul>
+  <section id="environment-setup">
+<span id="id1"></span><h1>Environment setup<a class="headerlink" href="#environment-setup" title="Link to this heading"></a></h1>
+<p>The simplest way to get an appropriate environment set up for these
+tutorials is using a conda environment.</p>
+<p>If you are an ISIS facility users, a fast “mamba”-enable conda
+impelementation is available on IDAaaS. Otherwise, if you are not sure
+what is available it may be best to use <a class="reference external" href="https://github.com/conda-forge/miniforge">Miniforge</a> or <a class="reference external" href="https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html">micromamba</a> to get up and running.</p>
+<p>An environment file is provided in this repository; create an environment and activate it with e.g.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>mamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>env.yaml
+mamba<span class="w"> </span>activate<span class="w"> </span>abins-tutorials
+</pre></div>
 </div>
+<p>Be aware that this environment has about 3GB of depenencies; this is
+dominated by the NVIDIA/CUDA libraries needed to run on GPU. If you
+are not using GPU, consider removing the “pytorch-cuda” line before
+installing!</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="environment-setup.html" class="btn btn-neutral float-right" title="Environment setup" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Abins Tutorials!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mlip-phonopy.html" class="btn btn-neutral float-right" title="Using a pre-trained MLIP with Phonopy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

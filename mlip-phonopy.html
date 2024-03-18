@@ -21,7 +21,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Welcome to Abins Tutorials!" href="index.html" /> 
+    <link rel="prev" title="Environment setup" href="environment-setup.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,7 +45,12 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Using a pre-trained MLIP with Phonopy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environment-setup.html">Environment setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using a pre-trained MLIP with Phonopy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#step-0-setting-up-the-machine-learned-interatomic-potential-mlip">Step 0: setting up the machine-learned interatomic potential (MLIP)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-1-geometry-optimisation">Step 1: geometry optimisation</a></li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -73,27 +78,128 @@
            <div itemprop="articleBody">
              
   <section id="using-a-pre-trained-mlip-with-phonopy">
-<h1>Using a pre-trained MLIP with Phonopy<a class="headerlink" href="#using-a-pre-trained-mlip-with-phonopy" title="Link to this heading"></a></h1>
+<span id="mlip-phonopy"></span><h1>Using a pre-trained MLIP with Phonopy<a class="headerlink" href="#using-a-pre-trained-mlip-with-phonopy" title="Link to this heading"></a></h1>
 <p>For accurate results one would typically compute phonons with density-functional theory or with a system-specific interatomic potential. However, at the early stages of a project it may be useful to run a “general” machine-learned interatomic potential (MLIP) which is been trained on a variety of systems.</p>
-<p>In this tutorial we primarily use the MACE-OFF23 <a class="footnote-reference brackets" href="#id3" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> potential which is trained on organic molecules; the more general MACE-MP-0 <a class="footnote-reference brackets" href="#id4" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> can be used in the same way for other chemistries. In both cases we are using the ASE Calculator interface; most popular MLIP packages have an ASE interface and so can be used in a similar fashion.</p>
+<p>In this tutorial we primarily use the MACE-OFF23 <a class="footnote-reference brackets" href="#mace-off" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> potential which is trained on organic molecules; the more general MACE-MP-0 <a class="footnote-reference brackets" href="#mace-mp-0" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> can be used in the same way for other chemistries. In both cases we are using the ASE Calculator interface; most popular MLIP packages have an ASE interface and so can be used in a similar fashion.</p>
+<p>We will also use ASE for geometry optimisation and Phonopy for setting-up/post-processing the force-constant calculations.</p>
+<p>This example workflow is implemented as a small Python program, with
+steps broken out into different functions. We will examine the
+functions separately in this document: to test the overall workflow
+you can run the program, or implement your own using the building
+blocks shown.</p>
+<section id="step-0-setting-up-the-machine-learned-interatomic-potential-mlip">
+<h2>Step 0: setting up the machine-learned interatomic potential (MLIP)<a class="headerlink" href="#step-0-setting-up-the-machine-learned-interatomic-potential-mlip" title="Link to this heading"></a></h2>
+<p>First, we need to set up an MLIP implementation. Here we assume that
+the MACE package has already been installed into the current
+environment. (See: <a class="reference internal" href="environment-setup.html"><span class="doc">Environment setup</span></a>.) Then we can create an
+ASE calculator, ready to attach to a structure (Atoms) object.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+        <span class="kn">from</span> <span class="nn">mace.calculators</span> <span class="kn">import</span> <span class="n">mace_off</span>
+
+        <span class="n">calc</span> <span class="o">=</span> <span class="n">mace_off</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">default_dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+
+</pre></div>
+</div>
+<p>There are a range of MLIP packages available and most of them provide
+an ASE calculator, or have had one wrapped around them. Here are a
+few, in no particular order:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>MLIP package</p></th>
+<th class="head"><p>ASE interface</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://libatoms.github.io/GAP">QUIP (GAP)</a></p></td>
+<td><p><a class="reference external" href="https://libatoms.github.io/GAP/quippy-potential-tutorial.html">quippy</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/JuliaMolSim/JuLIP.jl">JuLIP</a> <a class="reference external" href="https://acesuit.github.io">(ACE)</a></p></td>
+<td><p><a class="reference external" href="https://github.com/casv2/pyjulip">pyjulip</a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://mace-docs.readthedocs.io">MACE</a></p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pacemaker.readthedocs.io">pacemaker (ACE)</a></p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://gpumd.org">GPUMD (NEP)</a></p></td>
+<td><p><a class="reference external" href="https://calorine.materialsmodeling.org">calorine</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/mir-group/nequip">NequIP</a></p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/CompPhysVienna/n2p2">n2p2</a></p></td>
+<td><p>via LAMMPS</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="step-1-geometry-optimisation">
+<h2>Step 1: geometry optimisation<a class="headerlink" href="#step-1-geometry-optimisation" title="Link to this heading"></a></h2>
+<p>First, we grab an input structure for hexane from the CCSD in CIF
+format. The file provided by CCSD has already been converted to a
+simpler format and saved as a “geometry.in” file in the FHI-aims
+format. (As we will be using ASE we can work with whichever format
+looks the nicest!)</p>
+<p>We then optimise the geometry with a very fine force criterion, in
+order to get as close to the minimum-energy configuration as
+possible.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">atoms</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="n">get_optimized_geometry</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">calc</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_optimized_geometry</span><span class="p">(</span>
+    <span class="n">atoms</span><span class="p">:</span> <span class="n">Atoms</span><span class="p">,</span>
+    <span class="n">calc</span><span class="p">:</span> <span class="n">Calculator</span><span class="p">,</span>
+    <span class="n">trajectory_file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;opt.traj&quot;</span><span class="p">,</span>
+    <span class="n">fire_steps</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">fmax</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Atoms</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Optimize geometry in two stages using ASE</span>
+
+<span class="sd">    The FIRE optimiser is very stable, and can be a good starting point if we</span>
+<span class="sd">    are starting far from the minimum-energy configuration. We then switch to</span>
+<span class="sd">    the QuasiNewton optimiser which is more efficient when close to the minimum.</span>
+
+<span class="sd">    Returns an optimised copy of the input atoms with calc attached.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">atoms</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">atoms</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">calc</span>
+
+    <span class="n">traj</span> <span class="o">=</span> <span class="n">Trajectory</span><span class="p">(</span><span class="n">trajectory_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">atoms</span><span class="p">)</span>
+
+    <span class="n">opt</span> <span class="o">=</span> <span class="n">FIRE</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+    <span class="n">opt</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+    <span class="n">opt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="n">fire_steps</span><span class="p">)</span>
+
+    <span class="n">opt</span> <span class="o">=</span> <span class="n">QuasiNewton</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+    <span class="n">opt</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+    <span class="n">opt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fmax</span><span class="o">=</span><span class="n">fmax</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">atoms</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
 <aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id3" role="doc-footnote">
+<aside class="footnote brackets" id="mace-off" role="doc-footnote">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
 <p>D. P. Kovács et al. “MACE-OFF23: Transferable Machine Learning Force Fields for Organic Molecules” <a class="reference external" href="https://arxiv.org/abs/2312.15211">https://arxiv.org/abs/2312.15211</a></p>
 </aside>
-<aside class="footnote brackets" id="id4" role="doc-footnote">
+<aside class="footnote brackets" id="mace-mp-0" role="doc-footnote">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
 <p>I. Batatia et al. “A foundation model for atomistic materials chemistry” <a class="reference external" href="https://arxiv.org/abs/2401.00096">https://arxiv.org/abs/2401.00096</a></p>
 </aside>
 </aside>
-<p>We will also use ASE for geometry optimisation and Phonopy for setting-up/post-processing the force-constant calculations.</p>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Abins Tutorials!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="environment-setup.html" class="btn btn-neutral float-left" title="Environment setup" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

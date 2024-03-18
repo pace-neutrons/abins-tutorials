@@ -12,4 +12,5 @@ Hopefully some tutorial files will make their way here eventually.
    :maxdepth: 2
    :caption: Contents:
 
+   environment-setup.rst
    mlip-phonopy.rst
