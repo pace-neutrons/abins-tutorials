@@ -1,7 +1,8 @@
 .. _mlip-phonopy:
 
-Using a pre-trained MLIP with Phonopy
-=====================================
+=======================================
+ Using a pre-trained MLIP with Phonopy
+=======================================
 
 For accurate results one would typically compute phonons with density-functional theory or with a system-specific interatomic potential. However, at the early stages of a project it may be useful to run a "general" machine-learned interatomic potential (MLIP) which is been trained on a variety of systems.
 
@@ -17,7 +18,7 @@ blocks shown.
 
 
 Step 0: setting up the machine-learned interatomic potential (MLIP)
--------------------------------------------------------------------
+===================================================================
 
 First, we need to set up an MLIP implementation. Here we assume that
 the MACE package has already been installed into the current
@@ -47,7 +48,7 @@ MLIP package                                                                    
 
 
 Step 1: geometry optimisation
------------------------------
+=============================
 
 
 First, we grab an input structure for hexane from the CCSD in CIF
@@ -68,6 +69,51 @@ possible.
    :start-at: def get_optimized_geometry
    :end-at:   return atoms
 
+To get a sense of the optimisation progress, examine the trajectory file with
+
+.. code-block:: sh
+
+   ase gui opt.traj
+
+and create a plot of max forces by entering ``i, fmax`` in the Graphs window.
+   
+.. image:: Figures/geomopt-screenshot.png
+           :alt: Sreenshot of ASE-gui showing hexane structure with plots of energy and force convergence
+
+Step 2: finite displacements
+============================
+
+We will use the `Phonopy <https://phonopy.github.io/phonopy/index.html>`_
+Python API to create supercells with displaced atoms and analyse the forces.
+
+A few lines of code are needed to adapt between the ASE and phonopy structure representations: to keep things tidy we wrap these into functions.
+
+.. literalinclude:: ../mlip_phonopy/mlip_phonopy.py
+                    :start-at: def phonopy_from_ase(atoms: Atoms)
+                    :end-before: def main(
+
+Now we set up the displacements: the displaced structures are created on the Phonopy object as ``phonopy.supercells_with_displacements``. SYMPREC (symmetry threshold) and DISP_SIZE (finite displacement distance) are parameters controlling the displacement scheme; in the sample program they are set to 1e-4 and 1e-3 respectively.
+The supercell matrix is another user parameter; this has a significant impact on the runtime and the quality of results, so should be checked carefully.
+
+.. literalinclude:: ../mlip_phonopy/mlip_phonopy.py
+   :start-after: rprint("Step 2: set up phonon displacements...")
+   :end-before:  rprint("Step 3: calculate forces on displacements...")
+
+Step 3: force calculations
+==========================
+
+Using ASE the idiom for calculating forces on a structure is:
+
+- attach a "calculator" to the structure ``atoms.calc = calculator``
+- call ``atoms.get_forces())``
+
+Here we do this for each of the displaced supercells, collecting the results into a list for later use.
+`tqdm <https://tqdm.github.io>`_ is used to make a nice progress bar while this runs; for large supercells it may take a while!
+  
+.. literalinclude:: ../mlip_phonopy/mlip_phonopy.py
+   :start-after: rprint("Step 3: calculate forces on displacements...")
+   :end-before:  rprint("Step 4: Construct force constants...")
+                               
 .. rubric:: References
 
 .. [#mace-off]   \D. P. Kovács et al. "MACE-OFF23: Transferable Machine Learning Force Fields for Organic Molecules" https://arxiv.org/abs/2312.15211
