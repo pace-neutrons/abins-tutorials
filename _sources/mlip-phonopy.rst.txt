@@ -44,6 +44,7 @@ MLIP package                                                                    
 `GPUMD (NEP) <https://gpumd.org>`_                                                          `calorine <https://calorine.materialsmodeling.org>`_
 `NequIP <https://github.com/mir-group/nequip>`_                                             Yes
 `n2p2 <https://github.com/CompPhysVienna/n2p2>`_                                            via LAMMPS
+`SchNetPack <https://github.com/atomistic-machine-learning/schnetpack>`_                    Yes
 =========================================================================================   ============================================
 
 
