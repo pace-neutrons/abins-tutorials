@@ -154,11 +154,35 @@ workspaces using
 
 .. code-block:: python
 
-   PLACEHOLDER: LIST WORKSPACES
+  mantid.simpleapi.AnalysisDataService.getObjectNames()
 
 .. code-block:: text
 
-   PLACEHOLDER: WORKSPACES
+  ['abins-output',
+   'abins-output_C_quantum_event_1',
+   'abins-output_C_quantum_event_10',
+   'abins-output_C_quantum_event_2',
+   'abins-output_C_quantum_event_3',
+   'abins-output_C_quantum_event_4',
+   'abins-output_C_quantum_event_5',
+   'abins-output_C_quantum_event_6',
+   'abins-output_C_quantum_event_7',
+   'abins-output_C_quantum_event_8',
+   'abins-output_C_quantum_event_9',
+   'abins-output_C_total',
+   'abins-output_H_quantum_event_1',
+   'abins-output_H_quantum_event_10',
+   'abins-output_H_quantum_event_2',
+   'abins-output_H_quantum_event_3',
+   'abins-output_H_quantum_event_4',
+   'abins-output_H_quantum_event_5',
+   'abins-output_H_quantum_event_6',
+   'abins-output_H_quantum_event_7',
+   'abins-output_H_quantum_event_8',
+   'abins-output_H_quantum_event_9',
+   'abins-output_H_total',
+   'abins-output_total']
+
 
 In our script we know the workspace of interest will always be called
 "abins-output_total", so we access this using ``mantid.simpleapi.mtd``
