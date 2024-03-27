@@ -14,7 +14,6 @@ from ase.optimize import FIRE, LBFGS, QuasiNewton
 import numpy as np
 from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
-from rich import print as rprint
 from tqdm import tqdm
 import typer
 
@@ -89,11 +88,11 @@ def main(
 ):
     device = "cuda" if gpu else "cpu"
 
-    rprint(
-        '[bold]Demonstration: MLIP + [italic]"direct method"[/italic] phonons + Incoherent INS[/bold]'
+    print(
+        'Demonstration: MLIP + "direct method" phonons + Incoherent INS'
     )
 
-    rprint(f"Step 0: set up the MLIP ({model})...".format)
+    print(f"Step 0: set up the MLIP ({model})...".format)
 
     if model == MLIP.MACE_OFF_23:
 
@@ -110,18 +109,18 @@ def main(
     else:
         raise ValueError(f"Model '{model}' is not supported")
 
-    rprint("Step 1: structure optimisation...")
+    print("Step 1: structure optimisation...")
     atoms = ase.io.read(filename)
     atoms = get_optimized_geometry(atoms, calc)
 
-    rprint("Step 2: set up phonon displacements...")
+    print("Step 2: set up phonon displacements...")
     # Phonopy uses its own ASE-like structure container
     phonopy = Phonopy(
         phonopy_from_ase(atoms), supercell_matrix=supercell, symprec=SYMPREC
     )
     phonopy.generate_displacements(distance=DISP_SIZE)
 
-    rprint("Step 3: calculate forces on displacements...")
+    print("Step 3: calculate forces on displacements...")
     force_container = []
 
     def _get_forces(atoms: Atoms) -> np.ndarray:
@@ -133,11 +132,11 @@ def main(
         for displaced_supercell in tqdm(phonopy.supercells_with_displacements)
     ]
 
-    rprint("Step 4: Construct force constants...")
+    print("Step 4: Construct force constants...")
     phonopy.forces = all_forces
     phonopy.produce_force_constants()
 
-    rprint(f"      Saving to files {PHONOPY_FILE} and force_constants.hdf5 ...")
+    print(f"      Saving to files {PHONOPY_FILE} and force_constants.hdf5 ...")
     phonopy.save(filename=PHONOPY_FILE, settings={"force_constants": False})
     from phonopy.file_IO import write_force_constants_to_hdf5
 

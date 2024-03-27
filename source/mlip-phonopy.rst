@@ -113,6 +113,19 @@ Here we do this for each of the displaced supercells, collecting the results int
 .. literalinclude:: ../mlip_phonopy/mlip_phonopy.py
    :start-after: rprint("Step 3: calculate forces on displacements...")
    :end-before:  rprint("Step 4: Construct force constants...")
+
+Step 4: constructing force constants
+====================================
+
+The force constants are the Hessian of our supercell, and can be used
+to generate phonon band structures and simulated neutron spectra.
+
+We attach the calculated forces to the Phonopy object and instruct it
+to compute the force constants and write data files.
+
+.. literalinclude:: ../mlip_phonopy/mlip_phonopy.py
+    :start-after: rprint("Step 4: Construct force constants...")
+
                                
 .. rubric:: References
 
