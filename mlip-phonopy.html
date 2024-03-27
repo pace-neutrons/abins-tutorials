@@ -51,6 +51,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#step-1-geometry-optimisation">Step 1: geometry optimisation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-2-finite-displacements">Step 2: finite displacements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-3-force-calculations">Step 3: force calculations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-4-constructing-force-constants">Step 4: constructing force constants</a></li>
 </ul>
 </li>
 </ul>
@@ -218,14 +219,6 @@ Python API to create supercells with displaced atoms and analyse the forces.</p>
 </div>
 <p>Now we set up the displacements: the displaced structures are created on the Phonopy object as <code class="docutils literal notranslate"><span class="pre">phonopy.supercells_with_displacements</span></code>. SYMPREC (symmetry threshold) and DISP_SIZE (finite displacement distance) are parameters controlling the displacement scheme; in the sample program they are set to 1e-4 and 1e-3 respectively.
 The supercell matrix is another user parameter; this has a significant impact on the runtime and the quality of results, so should be checked carefully.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># Phonopy uses its own ASE-like structure container</span>
-    <span class="n">phonopy</span> <span class="o">=</span> <span class="n">Phonopy</span><span class="p">(</span>
-        <span class="n">phonopy_from_ase</span><span class="p">(</span><span class="n">atoms</span><span class="p">),</span> <span class="n">supercell_matrix</span><span class="o">=</span><span class="n">supercell</span><span class="p">,</span> <span class="n">symprec</span><span class="o">=</span><span class="n">SYMPREC</span>
-    <span class="p">)</span>
-    <span class="n">phonopy</span><span class="o">.</span><span class="n">generate_displacements</span><span class="p">(</span><span class="n">distance</span><span class="o">=</span><span class="n">DISP_SIZE</span><span class="p">)</span>
-
-</pre></div>
-</div>
 </section>
 <section id="step-3-force-calculations">
 <h2>Step 3: force calculations<a class="headerlink" href="#step-3-force-calculations" title="Link to this heading"></a></h2>
@@ -236,19 +229,13 @@ The supercell matrix is another user parameter; this has a significant impact on
 </ul>
 <p>Here we do this for each of the displaced supercells, collecting the results into a list for later use.
 <a class="reference external" href="https://tqdm.github.io">tqdm</a> is used to make a nice progress bar while this runs; for large supercells it may take a while!</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">force_container</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">def</span> <span class="nf">_get_forces</span><span class="p">(</span><span class="n">atoms</span><span class="p">:</span> <span class="n">Atoms</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-        <span class="n">atoms</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">calc</span>
-        <span class="k">return</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span>
-
-    <span class="n">all_forces</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">_get_forces</span><span class="p">(</span><span class="n">ase_from_phonopy</span><span class="p">(</span><span class="n">displaced_supercell</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">displaced_supercell</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">phonopy</span><span class="o">.</span><span class="n">supercells_with_displacements</span><span class="p">)</span>
-    <span class="p">]</span>
-
-</pre></div>
-</div>
+</section>
+<section id="step-4-constructing-force-constants">
+<h2>Step 4: constructing force constants<a class="headerlink" href="#step-4-constructing-force-constants" title="Link to this heading"></a></h2>
+<p>The force constants are the Hessian of our supercell, and can be used
+to generate phonon band structures and simulated neutron spectra.</p>
+<p>We attach the calculated forces to the Phonopy object and instruct it
+to compute the force constants and write data files.</p>
 <p class="rubric">References</p>
 <aside class="footnote-list brackets">
 <aside class="footnote brackets" id="mace-off" role="doc-footnote">
