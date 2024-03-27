@@ -78,7 +78,7 @@ To get a sense of the optimisation progress, examine the trajectory file with
 and create a plot of max forces by entering ``i, fmax`` in the Graphs window.
    
 .. image:: Figures/geomopt-screenshot.png
-           :alt: Sreenshot of ASE-gui showing hexane structure with plots of energy and force convergence
+           :alt: Screenshot of ASE-gui showing hexane structure with plots of energy and force convergence
 
 Step 2: finite displacements
 ============================
@@ -96,8 +96,8 @@ Now we set up the displacements: the displaced structures are created on the Pho
 The supercell matrix is another user parameter; this has a significant impact on the runtime and the quality of results, so should be checked carefully.
 
 .. literalinclude:: ../mlip_phonopy/mlip_phonopy.py
-   :start-after: rprint("Step 2: set up phonon displacements...")
-   :end-before:  rprint("Step 3: calculate forces on displacements...")
+   :start-after: print("Step 2: set up phonon displacements...")
+   :end-before:  print("Step 3: calculate forces on displacements...")
 
 Step 3: force calculations
 ==========================
@@ -111,8 +111,8 @@ Here we do this for each of the displaced supercells, collecting the results int
 `tqdm <https://tqdm.github.io>`_ is used to make a nice progress bar while this runs; for large supercells it may take a while!
   
 .. literalinclude:: ../mlip_phonopy/mlip_phonopy.py
-   :start-after: rprint("Step 3: calculate forces on displacements...")
-   :end-before:  rprint("Step 4: Construct force constants...")
+   :start-after: print("Step 3: calculate forces on displacements...")
+   :end-before:  print("Step 4: Construct force constants...")
 
 Step 4: constructing force constants
 ====================================
@@ -124,10 +124,106 @@ We attach the calculated forces to the Phonopy object and instruct it
 to compute the force constants and write data files.
 
 .. literalinclude:: ../mlip_phonopy/mlip_phonopy.py
-    :start-after: rprint("Step 4: Construct force constants...")
+    :start-after: print("Step 4: Construct force constants...")
 
-                               
+Here we write the force constants to a ``force_constants.hdf5`` file. This is only
+recently supported by Abins; to include the force constants in the
+.yaml file instead use
+
+.. code-block:: python
+
+    phonopy.save(filename=PHONOPY_FILE, settings={"force_constants": True})
+
+This is compatible with more versions of Abins, and more convenient as the file can have any name.
+However, the data loading may be noticeably slower as the `YAML format <https://en.wikipedia.org/wiki/YAML>`_
+is not designed for large numerical arrays.
+
+Step 5: INS simulation with Abins Python interface
+==================================================
+
+Plotting is implemented in a separate script ``abins_plot.py``. After collecting the phonopy data ``filename`` and measurement ``temperature`` from the user we can call Abins:
+
+.. literalinclude:: ../mlip_phonopy/abins_plot.py
+                    :start-at: mantid.simpleapi.Abins(
+                    :end-before: workspace = mantid
+
+Abins is an "Algorithm" in Mantid, and writes its results to Workspace
+objects. In a graphical Workspace session we can manage these from an
+interactive panel: from Python it can be useful to check our available
+workspaces using
+
+.. code-block:: python
+
+  mantid.simpleapi.AnalysisDataService.getObjectNames()
+
+.. code-block:: text
+
+  ['abins-output',
+   'abins-output_C_quantum_event_1',
+   'abins-output_C_quantum_event_10',
+   'abins-output_C_quantum_event_2',
+   'abins-output_C_quantum_event_3',
+   'abins-output_C_quantum_event_4',
+   'abins-output_C_quantum_event_5',
+   'abins-output_C_quantum_event_6',
+   'abins-output_C_quantum_event_7',
+   'abins-output_C_quantum_event_8',
+   'abins-output_C_quantum_event_9',
+   'abins-output_C_total',
+   'abins-output_H_quantum_event_1',
+   'abins-output_H_quantum_event_10',
+   'abins-output_H_quantum_event_2',
+   'abins-output_H_quantum_event_3',
+   'abins-output_H_quantum_event_4',
+   'abins-output_H_quantum_event_5',
+   'abins-output_H_quantum_event_6',
+   'abins-output_H_quantum_event_7',
+   'abins-output_H_quantum_event_8',
+   'abins-output_H_quantum_event_9',
+   'abins-output_H_total',
+   'abins-output_total']
+
+
+In our script we know the workspace of interest will always be called
+"abins-output_total", so we access this using ``mantid.simpleapi.mtd``
+and extract the data into a plot-friendly form.
+
+.. literalinclude:: ../mlip_phonopy/abins_plot.py
+                    :start-at: workspace = mantid
+                    :end-at: frequency_midpoints =
+
+We plot the data using Matplotlib; if you prefer some other tool
+(e.g. Grace, Origin, d3...) then it may be helpful to write the data
+values to a file instead.
+
+.. literalinclude:: ../mlip_phonopy/abins_plot.py
+                    :start-at: fig, ax = plt.subplots
+                    :end-before: if ref_dat is None:
+
+In this case we would also like to plot against some experimental
+data: we have a file "Hexane.dat" from the
+`ISIS INS Database <http://wwwisis2.isis.rl.ac.uk/INSdatabase/>`_
+with data from an experimental measurement on the TXFA instrument. [#txfa-alkanes]_
+The file is in a Mantid-friendly format that can be read with the Load Algorithm.
+
+.. literalinclude:: ../mlip_phonopy/abins_plot.py
+                    :start-at: ref_workspace = mantid.simpleapi.Load
+                    :end-at: ax.legend()
+
+With a bit of arbitrary scaling in the ``ref_scale`` variable we get a nice comparison:
+
+.. image:: Figures/hexane-mlip-txfa.png
+           :alt: Simulated INS spectrum for Hexane on TOSCA compared with experimental data on TXFA
+
+Note that the TXFA instrument pre-dates TOSCA; while the geometry is
+similar to the TOSCA backscattering bank, we expect the resolution to
+be broader and the background to be higher.
+
+The agreement of many peaks is excellent for a general-purpose potential. Do have a try with some different models, not all of them will match experiment this way! One might also look at the effect of changing supercell dimensions and displacement sizes.
+
+
 .. rubric:: References
 
-.. [#mace-off]   \D. P. Kovács et al. "MACE-OFF23: Transferable Machine Learning Force Fields for Organic Molecules" https://arxiv.org/abs/2312.15211
-.. [#mace-mp-0]   \I. Batatia et al. "A foundation model for atomistic materials chemistry" https://arxiv.org/abs/2401.00096
+.. [#mace-off]   \D. P. Kovács et al. (2023) "MACE-OFF23: Transferable Machine Learning Force Fields for Organic Molecules" https://arxiv.org/abs/2312.15211
+.. [#mace-mp-0]   \I. Batatia et al. (2024) "A foundation model for atomistic materials chemistry" https://arxiv.org/abs/2401.00096
+.. [#txfa-alkanes] \D. A. Braden et al. (1999) "Inelastic neutron scattering spectra of the longitudinal acoustic modes of the normal alkanes from pentane to pentacosane" *J. Chem. Phys.* **111**, 429-437 https://doi.org/10.1063/1.479293
