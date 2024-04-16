@@ -37,10 +37,10 @@ few, in no particular order:
 =========================================================================================   ============================================
 MLIP package                                                                                ASE interface
 =========================================================================================   ============================================
-`QUIP (GAP) <https://libatoms.github.io/GAP>`_                                              `quippy <https://libatoms.github.io/GAP/quippy-potential-tutorial.html>`_
+`QUIP (GAP) <https://libatoms.github.io/GAP/>`_                                              `quippy <https://libatoms.github.io/GAP/quippy-potential-tutorial.html>`_
 `JuLIP <https://github.com/JuliaMolSim/JuLIP.jl>`_ `(ACE) <https://acesuit.github.io>`_     `pyjulip <https://github.com/casv2/pyjulip>`_
-`MACE <https://mace-docs.readthedocs.io>`_                                                  Yes
-`pacemaker (ACE) <https://pacemaker.readthedocs.io>`_                                       Yes
+`MACE <https://mace-docs.readthedocs.io/en/latest/>`_                                                  Yes
+`pacemaker (ACE) <https://pacemaker.readthedocs.io/en/latest/>`_                                       Yes
 `GPUMD (NEP) <https://gpumd.org>`_                                                          `calorine <https://calorine.materialsmodeling.org>`_
 `NequIP <https://github.com/mir-group/nequip>`_                                             Yes
 `n2p2 <https://github.com/CompPhysVienna/n2p2>`_                                            via LAMMPS
