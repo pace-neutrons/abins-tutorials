@@ -52,10 +52,10 @@ Step 1: geometry optimisation
 =============================
 
 
-First, we grab an input structure for hexane from the CCSD in CIF
-format. The file provided by CCSD has already been converted to a
+First, we grab an `input structure for hexane from the CCSD <https://doi.org/10.5517/cc3gcpl>` in CIF format.
+Here the file provided by CCSD has already been converted to a
 simpler format and saved as a "geometry.in" file in the FHI-aims
-format. (As we will be using ASE we can work with whichever format
+format. (As we will be using ASE, we can work with whichever format
 looks the nicest!)
 
 We then optimise the geometry with a very fine force criterion, in
