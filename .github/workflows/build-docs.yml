@@ -23,6 +23,10 @@ jobs:
       - name: Sphinx build
         run: sphinx-build source build
         shell: bash -el {0}
+      - name: Link checks
+        uses: becheran/mlc@v0.16.3
+        with:
+          args: "build"
       - name: Push site to Github Pages
         uses: Cecilapp/GitHub-Pages-deploy@3.2.2
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
